@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QuietSpace - Focus Room</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f0f4f8; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  h1 { margin-bottom: 10px; }
+  .timer { font-size: 48px; margin: 20px 0; }
+  button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+  select { font-size: 16px; padding: 5px; }
+  .users { margin-top: 30px; width: 250px; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+  .users h3 { margin-top: 0; }
+  .users ul { list-style: none; padding-left: 0; }
+  .users li { padding: 5px 0; border-bottom: 1px solid #ddd; }
+  label { margin-right: 10px; }
+</style>
+</head>
+<body>
+
+<h1>QuietSpace - Virtual Focus Room</h1>
+
+<label for="sessionLength">Select session length:</label>
+<select id="sessionLength">
+  <option value="1500">25 minutes</option>
+  <option value="3000">50 minutes</option>
+</select>
+
+<div class="timer" id="timer">25:00</div>
+
+<button id="startBtn">Start</button>
+<button id="stopBtn" disabled>Stop</button>
+
+<div style="margin-top:20px;">
+  <label><input type="checkbox" id="forestSound" /> Play forest sound</label>
+</div>
+
+<audio id="forestAudio" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_6e7d8d0110.mp3?filename=forest-birds-ambient-sound-6416.mp3" type="audio/mpeg" />
+  Your browser does not support the audio element.
+</audio>
+
+<div class="users">
+  <h3>Currently in focus room:</h3>
+  <ul id="userList">
+    <li>Anna</li>
+    <li>Mark</li>
+    <li>Linda</li>
+    <li>James</li>
+  </ul>
+</div>
+
+<script>
+  const timerDisplay = document.getElementById('timer');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const sessionLengthSelect = document.getElementById('sessionLength');
+  const forestSoundCheckbox = document.getElementById('forestSound');
+  const forestAudio = document.getElementById('forestAudio');
+
+  let timer;
+  let timeLeft = parseInt(sessionLengthSelect.value);
+
+  function updateTimerDisplay(seconds) {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    timerDisplay.textContent = `${m}:${s}`;
+  }
+
+  sessionLengthSelect.addEventListener('change', () => {
+    if (!timer) {
+      timeLeft = parseInt(sessionLengthSelect.value);
+      updateTimerDisplay(timeLeft);
+    }
+  });
+
+  startBtn.addEventListener('click', () => {
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    timer = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay(timeLeft);
+
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        timer = null;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        alert('Session complete! Take a short break.');
+        timeLeft = parseInt(sessionLengthSelect.value);
+        updateTimerDisplay(timeLeft);
+      }
+    }, 1000);
+
+    if (forestSoundCheckbox.checked) {
+      forestAudio.play();
+    }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    clearInterval(timer);
+    timer = null;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    timeLeft = parseInt(sessionLengthSelect.value);
+    updateTimerDisplay(timeLeft);
+    forestAudio.pause();
+    forestAudio.currentTime = 0;
+  });
+
+  forestSoundCheckbox.addEventListener('change', () => {
+    if (forestSoundCheckbox.checked && timer) {
+      forestAudio.play();
+    } else {
+      forestAudio.pause();
+      forestAudio.currentTime = 0;
+    }
+  });
+
+  updateTimerDisplay(timeLeft);
+</script>
+
+</body>
+</html>
