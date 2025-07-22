@@ -1,148 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simple Pomodoro Timer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
-      color: #333;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container {
-      background: white;
-      max-width: 400px;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    h1 {
-      font-weight: 700;
-      color: #2c3e50;
-      margin-bottom: 25px;
-    }
-    #timer {
-      font-size: 72px;
-      margin-bottom: 20px;
-      font-weight: 700;
-      color: #34495e;
-    }
-    button {
-      background: #2c3e50;
-      color: white;
-      border: none;
-      padding: 12px 30px;
-      font-size: 18px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin: 5px;
-    }
-    button:hover {
-      background: #34495e;
-    }
-    #musicToggle {
-      background: #16a085;
-    }
-    #musicToggle:hover {
-      background: #1abc9c;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pomodoro with Streaks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+  body {
+    background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+    font-family: 'Montserrat', sans-serif;
+    margin: 0; padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #2c3e50;
+  }
+  .container {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    text-align: center;
+    width: 320px;
+  }
+  h1 {
+    margin-bottom: 15px;
+  }
+  input {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 2px solid #74ebd5;
+    margin-bottom: 20px;
+    outline: none;
+  }
+  input:focus {
+    border-color: #3498db;
+  }
+  #streak {
+    margin-top: 10px;
+    font-weight: 600;
+    font-size: 18px;
+  }
+  #timer {
+    font-size: 48px;
+    font-weight: 700;
+    margin: 20px 0 30px;
+  }
+  .circle-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 20px;
+  }
+  svg {
+    transform: rotate(-90deg);
+  }
+  circle {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+  }
+  .background-circle {
+    stroke: #e6e6e6;
+  }
+  .progress-circle {
+    stroke: #74ebd5;
+    transition: stroke-dashoffset 1s linear;
+  }
+  button {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 14px 35px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #34495e;
+  }
+  #info {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+    min-height: 20px;
+  }
+</style>
 </head>
 <body>
   <div class="container">
     <h1>Pomodoro Timer</h1>
-    <div id="timer">25:00</div>
+    <input id="username" type="text" placeholder="Enter your nickname" />
+    <div class="circle-wrap">
+      <svg width="180" height="180">
+        <circle class="background-circle" cx="90" cy="90" r="80"></circle>
+        <circle class="progress-circle" cx="90" cy="90" r="80" stroke-dasharray="502.65" stroke-dashoffset="502.65"></circle>
+      </svg>
+      <div id="timer">25:00</div>
+    </div>
     <button id="startStopBtn">Start</button>
-    <button id="resetBtn">Reset</button>
-    <br />
-    <button id="musicToggle">Play Music</button>
-
-    <audio id="backgroundMusic" loop>
-      <source src="https://cdn.pixabay.com/download/audio/2022/03/25/audio_77d442bdca.mp3?filename=calm-ambient-music-13322.mp3" type="audio/mpeg" />
-      Your browser does not support the audio element.
-    </audio>
+    <div id="streak">Streak: 0</div>
+    <div id="info"></div>
   </div>
 
-  <script>
-    const startStopBtn = document.getElementById('startStopBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const timerDisplay = document.getElementById('timer');
-    const musicToggle = document.getElementById('musicToggle');
-    const backgroundMusic = document.getElementById('backgroundMusic');
+<script>
+  const startStopBtn = document.getElementById('startStopBtn');
+  const timerDisplay = document.getElementById('timer');
+  const progressCircle = document.querySelector('.progress-circle');
+  const usernameInput = document.getElementById('username');
+  const streakDisplay = document.getElementById('streak');
+  const info = document.getElementById('info');
 
-    let workTime = 25 * 60;  // 25 minutes in seconds
-    let breakTime = 5 * 60;  // 5 minutes break
-    let isRunning = false;
-    let isWorkSession = true;
-    let timer;
-    let timeLeft = workTime;
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius;
+  progressCircle.style.strokeDasharray = circumference;
 
-    function updateTimer() {
-      const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-      const seconds = (timeLeft % 60).toString().padStart(2, '0');
-      timerDisplay.textContent = `${minutes}:${seconds}`;
+  let workTime = 25 * 60; // 25 minutes in seconds
+  let timeLeft = workTime;
+  let timer = null;
+  let isRunning = false;
+
+  // Load streak and username from localStorage
+  let currentUsername = localStorage.getItem('pomodoroUsername') || '';
+  usernameInput.value = currentUsername;
+
+  function getStreakKey(name) {
+    return `pomodoroStreak_${name}`;
+  }
+  let streak = 0;
+  if(currentUsername){
+    streak = parseInt(localStorage.getItem(getStreakKey(currentUsername))) || 0;
+    streakDisplay.textContent = `Streak: ${streak}`;
+  }
+
+  function updateTimerDisplay() {
+    let minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    let seconds = (timeLeft % 60).toString().padStart(2, '0');
+    timerDisplay.textContent = `${minutes}:${seconds}`;
+
+    // Update circle progress
+    const progress = timeLeft / workTime;
+    progressCircle.style.strokeDashoffset = circumference * progress;
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    isRunning = false;
+    timeLeft = workTime;
+    updateTimerDisplay();
+    startStopBtn.textContent = 'Start';
+    info.textContent = '';
+  }
+
+  function saveStreak() {
+    if(currentUsername){
+      localStorage.setItem(getStreakKey(currentUsername), streak);
+      streakDisplay.textContent = `Streak: ${streak}`;
     }
+  }
 
-    function switchSession() {
-      isWorkSession = !isWorkSession;
-      timeLeft = isWorkSession ? workTime : breakTime;
-      alert(isWorkSession ? 'Work session started!' : 'Break time! Relax a bit.');
-      updateTimer();
-    }
-
-    function tick() {
-      if (timeLeft > 0) {
-        timeLeft--;
-        updateTimer();
-      } else {
-        clearInterval(timer);
-        switchSession();
-        timer = setInterval(tick, 1000);
-      }
-    }
-
-    startStopBtn.addEventListener('click', () => {
-      if (!isRunning) {
-        timer = setInterval(tick, 1000);
-        startStopBtn.textContent = 'Pause';
-        isRunning = true;
-      } else {
-        clearInterval(timer);
-        startStopBtn.textContent = 'Start';
-        isRunning = false;
-      }
-    });
-
-    resetBtn.addEventListener('click', () => {
+  function tick() {
+    if(timeLeft > 0){
+      timeLeft--;
+      updateTimerDisplay();
+    } else {
       clearInterval(timer);
       isRunning = false;
-      isWorkSession = true;
-      timeLeft = workTime;
-      updateTimer();
       startStopBtn.textContent = 'Start';
-    });
+      info.textContent = 'Session complete! Good job! 🎉';
 
-    musicToggle.addEventListener('click', () => {
-      if (backgroundMusic.paused) {
-        backgroundMusic.play();
-        musicToggle.textContent = 'Pause Music';
-      } else {
-        backgroundMusic.pause();
-        musicToggle.textContent = 'Play Music';
+      // Increase streak only if username is set
+      if(currentUsername){
+        streak++;
+        saveStreak();
       }
-    });
+    }
+  }
 
-    updateTimer();
-  </script>
+  startStopBtn.addEventListener('click', () => {
+    if (!usernameInput.value.trim()) {
+      alert('Please enter your nickname to start the timer!');
+      return;
+    }
+    if(!isRunning){
+      // Save username if changed
+      if(currentUsername !== usernameInput.value.trim()){
+        currentUsername = usernameInput.value.trim();
+        localStorage.setItem('pomodoroUsername', currentUsername);
+        streak = parseInt(localStorage.getItem(getStreakKey(currentUsername))) || 0;
+        streakDisplay.textContent = `Streak: ${streak}`;
+      }
+      timer = setInterval(tick, 1000);
+      isRunning = true;
+      startStopBtn.textContent = 'Pause';
+      info.textContent = '';
+    } else {
+      clearInterval(timer);
+      isRunning = false;
+      startStopBtn.textContent = 'Start';
+      info.textContent = 'Paused.';
+    }
+  });
+
+  usernameInput.addEventListener('change', () => {
+    // Save username and reset streak display
+    currentUsername = usernameInput.value.trim();
+    localStorage.setItem('pomodoroUsername', currentUsername);
+    streak = parseInt(localStorage.getItem(getStreakKey(currentUsername))) || 0;
+    streakDisplay.textContent = `Streak: ${streak}`;
+    resetTimer();
+  });
+
+  updateTimerDisplay();
+</script>
+
 </body>
 </html>
