@@ -1,126 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>QuietSpace - Focus Room</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f0f4f8; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-  h1 { margin-bottom: 10px; }
-  .timer { font-size: 48px; margin: 20px 0; }
-  button { padding: 10px 20px; margin: 5px; font-size: 16px; }
-  select { font-size: 16px; padding: 5px; }
-  .users { margin-top: 30px; width: 250px; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
-  .users h3 { margin-top: 0; }
-  .users ul { list-style: none; padding-left: 0; }
-  .users li { padding: 5px 0; border-bottom: 1px solid #ddd; }
-  label { margin-right: 10px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Pomodoro Timer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      color: #333;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      max-width: 400px;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 {
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 25px;
+    }
+    #timer {
+      font-size: 72px;
+      margin-bottom: 20px;
+      font-weight: 700;
+      color: #34495e;
+    }
+    button {
+      background: #2c3e50;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 5px;
+    }
+    button:hover {
+      background: #34495e;
+    }
+    #musicToggle {
+      background: #16a085;
+    }
+    #musicToggle:hover {
+      background: #1abc9c;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Pomodoro Timer</h1>
+    <div id="timer">25:00</div>
+    <button id="startStopBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+    <br />
+    <button id="musicToggle">Play Music</button>
 
-<h1>QuietSpace - Virtual Focus Room</h1>
+    <audio id="backgroundMusic" loop>
+      <source src="https://cdn.pixabay.com/download/audio/2022/03/25/audio_77d442bdca.mp3?filename=calm-ambient-music-13322.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+  </div>
 
-<label for="sessionLength">Select session length:</label>
-<select id="sessionLength">
-  <option value="1500">25 minutes</option>
-  <option value="3000">50 minutes</option>
-</select>
+  <script>
+    const startStopBtn = document.getElementById('startStopBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const timerDisplay = document.getElementById('timer');
+    const musicToggle = document.getElementById('musicToggle');
+    const backgroundMusic = document.getElementById('backgroundMusic');
 
-<div class="timer" id="timer">25:00</div>
+    let workTime = 25 * 60;  // 25 minutes in seconds
+    let breakTime = 5 * 60;  // 5 minutes break
+    let isRunning = false;
+    let isWorkSession = true;
+    let timer;
+    let timeLeft = workTime;
 
-<button id="startBtn">Start</button>
-<button id="stopBtn" disabled>Stop</button>
-
-<div style="margin-top:20px;">
-  <label><input type="checkbox" id="forestSound" /> Play forest sound</label>
-</div>
-
-<audio id="forestAudio" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_6e7d8d0110.mp3?filename=forest-birds-ambient-sound-6416.mp3" type="audio/mpeg" />
-  Your browser does not support the audio element.
-</audio>
-
-<div class="users">
-  <h3>Currently in focus room:</h3>
-  <ul id="userList">
-    <li>Anna</li>
-    <li>Mark</li>
-    <li>Linda</li>
-    <li>James</li>
-  </ul>
-</div>
-
-<script>
-  const timerDisplay = document.getElementById('timer');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const sessionLengthSelect = document.getElementById('sessionLength');
-  const forestSoundCheckbox = document.getElementById('forestSound');
-  const forestAudio = document.getElementById('forestAudio');
-
-  let timer;
-  let timeLeft = parseInt(sessionLengthSelect.value);
-
-  function updateTimerDisplay(seconds) {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    timerDisplay.textContent = `${m}:${s}`;
-  }
-
-  sessionLengthSelect.addEventListener('change', () => {
-    if (!timer) {
-      timeLeft = parseInt(sessionLengthSelect.value);
-      updateTimerDisplay(timeLeft);
+    function updateTimer() {
+      const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const seconds = (timeLeft % 60).toString().padStart(2, '0');
+      timerDisplay.textContent = `${minutes}:${seconds}`;
     }
-  });
 
-  startBtn.addEventListener('click', () => {
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
+    function switchSession() {
+      isWorkSession = !isWorkSession;
+      timeLeft = isWorkSession ? workTime : breakTime;
+      alert(isWorkSession ? 'Work session started!' : 'Break time! Relax a bit.');
+      updateTimer();
+    }
 
-    timer = setInterval(() => {
-      timeLeft--;
-      updateTimerDisplay(timeLeft);
-
-      if (timeLeft <= 0) {
+    function tick() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        updateTimer();
+      } else {
         clearInterval(timer);
-        timer = null;
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        alert('Session complete! Take a short break.');
-        timeLeft = parseInt(sessionLengthSelect.value);
-        updateTimerDisplay(timeLeft);
+        switchSession();
+        timer = setInterval(tick, 1000);
       }
-    }, 1000);
-
-    if (forestSoundCheckbox.checked) {
-      forestAudio.play();
     }
-  });
 
-  stopBtn.addEventListener('click', () => {
-    clearInterval(timer);
-    timer = null;
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    timeLeft = parseInt(sessionLengthSelect.value);
-    updateTimerDisplay(timeLeft);
-    forestAudio.pause();
-    forestAudio.currentTime = 0;
-  });
+    startStopBtn.addEventListener('click', () => {
+      if (!isRunning) {
+        timer = setInterval(tick, 1000);
+        startStopBtn.textContent = 'Pause';
+        isRunning = true;
+      } else {
+        clearInterval(timer);
+        startStopBtn.textContent = 'Start';
+        isRunning = false;
+      }
+    });
 
-  forestSoundCheckbox.addEventListener('change', () => {
-    if (forestSoundCheckbox.checked && timer) {
-      forestAudio.play();
-    } else {
-      forestAudio.pause();
-      forestAudio.currentTime = 0;
-    }
-  });
+    resetBtn.addEventListener('click', () => {
+      clearInterval(timer);
+      isRunning = false;
+      isWorkSession = true;
+      timeLeft = workTime;
+      updateTimer();
+      startStopBtn.textContent = 'Start';
+    });
 
-  updateTimerDisplay(timeLeft);
-</script>
+    musicToggle.addEventListener('click', () => {
+      if (backgroundMusic.paused) {
+        backgroundMusic.play();
+        musicToggle.textContent = 'Pause Music';
+      } else {
+        backgroundMusic.pause();
+        musicToggle.textContent = 'Play Music';
+      }
+    });
 
+    updateTimer();
+  </script>
 </body>
 </html>
